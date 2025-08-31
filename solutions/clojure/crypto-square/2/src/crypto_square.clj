@@ -1,0 +1,49 @@
+(ns crypto-square
+  (:require [clojure.string :as st]))
+
+(defn normalize-plaintext [s]
+  (-> s
+      st/lower-case
+      (st/replace #"[^a-z\d]" "")))
+
+
+(defn square-size
+  "c = r + 1 or c = r"
+  [s]
+  (-> s
+      count
+      Math/sqrt
+      Math/ceil
+      int))
+
+
+(defn plaintext-segments* [s]
+  (let [pt (normalize-plaintext s)
+        size (square-size pt)]
+    (partition size size (repeat \space) pt)))
+
+
+(defn plaintext-segments [s]
+  (->> s
+       plaintext-segments*
+       (map (comp st/trim (partial apply str)))))
+
+
+(defn cipher-segs [s]
+  (->> s
+       plaintext-segments*
+       (apply map str)))
+
+
+(defn ciphertext [s]
+  (->> s
+       cipher-segs
+       (map st/trim)
+       st/join))
+
+
+(defn normalize-ciphertext [s]
+  (->> s
+       cipher-segs
+       (st/join " ")))
+
