@@ -1,0 +1,31 @@
+public static class TelemetryBuffer
+{
+    public static byte[] ToBuffer(long reading)
+    {
+        var buffer = new byte[9];
+
+        var (prefix, bytes) = reading switch
+        {
+            > UInt32.MaxValue or < Int32.MinValue => ((byte)0xf8, BitConverter.GetBytes(reading)),
+            > Int32.MaxValue => ((byte)0x04, BitConverter.GetBytes((uint)reading)),
+            > UInt16.MaxValue or < Int16.MinValue => ((byte)0xfc, BitConverter.GetBytes((int)reading)),
+            >= 0 => ((byte)0x02, BitConverter.GetBytes((ushort)reading)),
+            _ => ((byte)0xfe, BitConverter.GetBytes((short)reading)),
+        };
+
+        buffer[0] = prefix;
+        bytes.CopyTo(buffer, 1);
+        return buffer;
+    }
+
+    public static long FromBuffer(byte[] buffer) =>
+        (sbyte)buffer[0] switch
+        {
+            -8 => BitConverter.ToInt64(buffer, 1),
+            4 => BitConverter.ToUInt32(buffer, 1),
+            -4 => BitConverter.ToInt32(buffer, 1),
+            2 => BitConverter.ToUInt16(buffer, 1),
+            -2 => BitConverter.ToInt16(buffer, 1),
+            _ => 0,
+        };
+}
